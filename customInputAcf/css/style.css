@@ -1,0 +1,13 @@
+
+
+.clock {
+    color: #17D4FE;
+    font-size: 40px;
+    letter-spacing: 7px;
+}
+.clock span{
+    margin-left: 10px;
+    border-radius: 10%;
+    background-color: black;
+    padding: 10px;
+}
