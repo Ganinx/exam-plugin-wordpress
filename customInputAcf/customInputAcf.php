@@ -7,13 +7,28 @@ Version: 1.0
 Author: Valentin l'incroyable
 */
 
-// Fonction pour enregistrer les champs personnalisés
+// Je recupere dans la base de donnée, active plugin qui me servira pour la vérification
 $active_plugins = get_option('active_plugins');
+// Je check si c'est activé dans woocomerce.php
 if (in_array('woocommerce/woocommerce.php', $active_plugins)) {
+
+    // J'active ma fonction lors de l'initialisation de acf/init
+    add_action('acf/init', 'my_acf_fields');
+
+    // J'active ma fonction lors de l'initialisation de save post
+    add_action("save_post", "acf_save_form_product");
+
+    // j'active ma fonction qui ajoute le style et le script dans le hook wp_enqueue_scripts
+    add_action('wp_enqueue_scripts', 'Plugin_Front_enqueue_scripts_and_style');
+
+    // Ajout du shortCode des premieres infos
+    add_shortcode( 'perso', 'ajoutPerso' );
+
+    // Ajout du shortCode prive qui contiendra les information sensible
+    add_shortcode('prive','informations_privees');
+
     function my_acf_fields()
     {
-        // Vérifie si woocommerce est actif
-
         // Vérifie si ACF est actif
         if (function_exists('acf_add_local_field_group')) {
 
@@ -55,7 +70,6 @@ if (in_array('woocommerce/woocommerce.php', $active_plugins)) {
                         'required' => 1,
                     ),
 
-                    // Ajoutez d'autres champs selon vos besoins
                 ),
                 'location' => array(
                     array(
@@ -72,13 +86,10 @@ if (in_array('woocommerce/woocommerce.php', $active_plugins)) {
             acf_add_local_field_group($fields);
         }
     }
-    add_action('acf/init', 'my_acf_fields');
-
-
-    add_action("save_post", "acf_save_form_product");
 
 
 
+    // fonction d'enregistrement dans la base de donnée
     function acf_save_form_product($post_id): void
     {
         if (isset($_POST['date_event'])) {
@@ -116,76 +127,69 @@ if (in_array('woocommerce/woocommerce.php', $active_plugins)) {
 
 
 
-
-    function Plugin_Front_enqueue_scripts()
+    // fonction qui charge les style et script sur le front
+    function Plugin_Front_enqueue_scripts_and_style()
     {
         wp_enqueue_script('script', plugins_url('js/script.js', __FILE__), array('jquery'), '', true);
+
         wp_enqueue_style('style', plugins_url('css/style.css', __FILE__));
     }
 
 
-        add_action('wp_enqueue_scripts', 'Plugin_Front_enqueue_scripts');
 
 
 
+    // fonction qui retourne les valeurs de la bdd sur le front
     function ajoutPerso( $atts, $content ) {
+
         $id = get_the_ID();
-        $date = get_post_meta(
+
+        $dateBdd = get_post_meta(
             $id,
             'date_event',
             true
         );
+
         $heure = get_post_meta(
             $id,
             'heure_event',
             true
         );
+
         $description = get_post_meta(
             $id,
             'description_event',
             true
         );
 
-        return '
-<ul>
-<li>date de l\'evennement: '.$date.'</li>
-<li>heure de l\'evennement: '.$heure.'</li>
-<li>description de l\'evennement: '.$description.'</li></ul>';
-    }
-
-
-    add_shortcode( 'perso', 'ajoutPerso' );
-
-
-    add_shortcode('compteur','compteur');
-
-    function compteur(){
-        $id = get_the_ID();
-        $dateBdd = get_post_meta(
-            $id,
-            'date_event',
-            true
-        );
-        $heure = get_post_meta(
-            $id,
-            'heure_event',
-            true
-        );
         $date = date( 'Y-m-d', strtotime( $dateBdd ) );
         $event_datetime = strtotime($date . ' ' . $heure);
 
-        return '<div><div id="MyClockDisplay" class="clock" onload="showTime()"></div><input type=hidden id=variableAPasser value="'.$event_datetime.'"/></div>';
+        return '
+                <ul>
+                <li>date de l\'evennement: '.$date.'</li>
+                <li>heure de l\'evennement: '.$heure.'</li>
+                <li>description de l\'evennement: '.$description.'</li>
+                </ul>
+                <div><div id="MyClockDisplay" class="clock" onload="showTime()"></div>
+                <input type=hidden id=variableAPasser value="'.$event_datetime.'"/></div>';
     }
 
+
+
+
+
+    // Fonction qui vérifie si le client a acheté un produit et dans ce cas affiche le le contenu du shortcode prive
     function informations_privees(){
 
         $infohtml='';
+        // si le user est connecté
         if (is_user_logged_in()) {
 
             $user_id = get_current_user_id();
             $product_id = get_the_ID();
 
-
+            // si il a acheté un produit
             if (wc_customer_bought_product($user_id, $user_id, $product_id)) {
 
                 $id = get_the_ID();
@@ -196,16 +200,17 @@ if (in_array('woocommerce/woocommerce.php', $active_plugins)) {
                     true
                 );
 
-                $infohtml = '<p>Info privé : '.$info.'</p>';
+                $infohtml = '<p>Information privée : '.$info.'</p>';
 
             }
 
         }
         return $infohtml;
     }
-    add_shortcode('prive','informations_privees');
+
 }else{
-    echo('arretez vous !');
+    // j'ai mis un echo en cas de probleme de non-chargement activation de woocommerce.
+    echo('Woocommerce n\'a pas été activé!');
 }
 
 
