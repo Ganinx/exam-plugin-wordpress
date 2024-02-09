@@ -15,9 +15,6 @@ if (in_array('woocommerce/woocommerce.php', $active_plugins)) {
     // J'active ma fonction lors de l'initialisation de acf/init
     add_action('acf/init', 'my_acf_fields');
 
-    // J'active ma fonction lors de l'initialisation de save post
-    add_action("save_post", "acf_save_form_product");
-
     // j'active ma fonction qui ajoute le style et le script dans le hook wp_enqueue_scripts
     add_action('wp_enqueue_scripts', 'Plugin_Front_enqueue_scripts_and_style');
 
@@ -89,44 +86,6 @@ if (in_array('woocommerce/woocommerce.php', $active_plugins)) {
 
 
 
-    // fonction d'enregistrement dans la base de donnée
-    function acf_save_form_product($post_id): void
-    {
-        if (isset($_POST['date_event'])) {
-            update_post_meta(
-                $post_id,
-                'date_event',
-                $_POST['date_event']
-            );
-        }
-
-        if (isset($_POST['heure_event'])) {
-            update_post_meta(
-                $post_id,
-                'heure_event',
-                $_POST['heure_event']
-            );
-        }
-        if (isset($_POST['description_event'])) {
-            update_post_meta(
-                $post_id,
-                'description_event',
-                $_POST['description_event']
-            );
-        }
-
-        if (isset($_POST['info_perso'])) {
-            update_post_meta(
-                $post_id,
-                'info_perso',
-                $_POST['info_perso']
-            );
-        }
-    }
-
-
-
-
     // fonction qui charge les style et script sur le front
     function Plugin_Front_enqueue_scripts_and_style()
     {
@@ -134,8 +93,6 @@ if (in_array('woocommerce/woocommerce.php', $active_plugins)) {
 
         wp_enqueue_style('style', plugins_url('css/style.css', __FILE__));
     }
-
-
 
 
 
@@ -164,6 +121,7 @@ if (in_array('woocommerce/woocommerce.php', $active_plugins)) {
 
         $date = date( 'Y-m-d', strtotime( $dateBdd ) );
         $event_datetime = strtotime($date . ' ' . $heure);
+        $event_datetime = strtotime('-1 hour',$event_datetime);
 
         return '
                 <ul>
@@ -174,9 +132,6 @@ if (in_array('woocommerce/woocommerce.php', $active_plugins)) {
                 <div><div id="MyClockDisplay" class="clock" onload="showTime()"></div>
                 <input type=hidden id=variableAPasser value="'.$event_datetime.'"/></div>';
     }
-
-
-
 
 
     // Fonction qui vérifie si le client a acheté un produit et dans ce cas affiche le le contenu du shortcode prive
